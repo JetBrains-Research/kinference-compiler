@@ -1,3 +1,4 @@
+import io.kinference.compiler.plugin.kInferenceCompiler
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 group = rootProject.group
@@ -14,6 +15,10 @@ tasks.withType<KotlinJvmCompile> {
         languageVersion = "1.5"
         apiVersion = "1.5"
     }
+}
+
+kInferenceCompiler {
+    enabled = true
 }
 
 dependencies {

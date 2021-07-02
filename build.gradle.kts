@@ -24,12 +24,6 @@ allprojects {
     }
 
     repositories {
-        jcenter()
         google()
-    }
-
-    // We should publish the project in the local maven repository before the tests running
-    tasks.withType<Test> {
-        dependsOn(tasks.withType<PublishToMavenLocal>{})
     }
 }
