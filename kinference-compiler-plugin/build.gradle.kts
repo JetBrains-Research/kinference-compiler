@@ -24,7 +24,7 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform {
-        includeTags = setOf()
+        includeTags = setOf("example")
     }
 
     testLogging {
