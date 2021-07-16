@@ -2,14 +2,16 @@ package io.kinference.compiler.plugin
 
 import com.google.auto.service.AutoService
 import io.kinference.compiler.plugin.cli.ConfigurationKeys
-import io.kinference.compiler.plugin.generation.ExampleIrGenerationExtension
+import io.kinference.compiler.plugin.generation.CompileTimeModelIrGenerationExtension
 import io.kinference.compiler.plugin.utils.initMessageCollector
 import io.kinference.compiler.plugin.utils.messageCollector
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.com.intellij.mock.MockProject
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 
+@ObsoleteDescriptorBasedAPI
 @Suppress("unused")
 @AutoService(ComponentRegistrar::class)
 class KInferenceCompilerComponentRegistrar : ComponentRegistrar {
@@ -24,7 +26,7 @@ class KInferenceCompilerComponentRegistrar : ComponentRegistrar {
 
         IrGenerationExtension.registerExtension(
             project,
-            ExampleIrGenerationExtension(messageCollector = configuration.messageCollector)
+            CompileTimeModelIrGenerationExtension(messageCollector = configuration.messageCollector)
         )
     }
 }

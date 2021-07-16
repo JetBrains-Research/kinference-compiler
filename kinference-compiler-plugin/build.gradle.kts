@@ -9,8 +9,11 @@ plugins {
 
 dependencies {
     implementation(project(":kinference-compiler-core"))
+    implementation(project(":kinference-compiler-dsl"))
 
     implementation(kotlin("compiler-embeddable"))
+
+    implementation("io.kinference", "inference", "0.1.2")
 
     implementation("com.google.auto.service", "auto-service-annotations", "1.0")
     kapt("com.google.auto.service", "auto-service", "1.0")
