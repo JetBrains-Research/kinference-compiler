@@ -22,10 +22,12 @@ kInferenceCompiler {
 }
 
 dependencies {
+    implementation("io.kinference.compiler", "kinference-compiler-dsl", "0.1.0")
 }
 
 repositories {
     mavenCentral()
     mavenLocal()
     google()
+    jcenter()
 }
