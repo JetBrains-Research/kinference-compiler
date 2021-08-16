@@ -2,6 +2,7 @@ package io.kinference.compiler.generation.operators
 
 import com.squareup.kotlinpoet.CodeBlock
 import io.kinference.compiler.generation.operators.activations.SoftmaxGenerator
+import io.kinference.compiler.generation.operators.activations.TanhGenerator
 import io.kinference.compiler.generation.operators.common.DefaultOperatorGenerator
 import io.kinference.compiler.generation.operators.flow.WhereGenerator
 import io.kinference.compiler.generation.operators.layer.recurrent.GRUGenerator
@@ -15,6 +16,7 @@ import io.kinference.compiler.generation.operators.math.SubGenerator
 import io.kinference.compiler.generation.operators.tensor.*
 import io.kinference.operators.Operator
 import io.kinference.operators.activations.Softmax
+import io.kinference.operators.activations.Tanh
 import io.kinference.operators.flow.Where
 import io.kinference.operators.layer.recurrent.gru.GRU
 import io.kinference.operators.logical.Equal
@@ -53,6 +55,7 @@ class OperatorGenerator(
             is Softmax -> SoftmaxGenerator(operator, info).generate()
             is Split -> SplitGenerator(operator, info).generate()
             is Sub -> SubGenerator(operator, info).generate()
+            is Tanh -> TanhGenerator(operator, info).generate()
             is Transpose -> TransposeGenerator(operator, info).generate()
             is Unsqueeze -> UnsqueezeGenerator(operator, info).generate()
             is Where -> WhereGenerator(operator, info).generate()

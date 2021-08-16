@@ -15,9 +15,9 @@ import kotlin.time.ExperimentalTime
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)
 @BenchmarkMode(Mode.SingleShotTime)
-@Warmup(iterations = 10)
+@Warmup(iterations = 30)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Measurement(iterations = 50)
+@Measurement(iterations = 200)
 @ExperimentalTime
 open class ModelBenchmark {
     @Param(
