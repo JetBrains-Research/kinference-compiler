@@ -13,5 +13,6 @@ abstract class MultidirectionalBroadcastingLogicalOperatorGenerator(
     operator: Operator<*, *>,
     info: OperatorGenerationInfo
 ) : MultidirectionalBroadcastingOperatorGenerator(operator, info) {
-    override fun resultType(inputType: DataTypeInfo): DataTypeInfo = DataType.BOOLEAN.exact()
+    override val resultType: DataTypeInfo
+        get() = DataType.BOOLEAN.exact()
 }

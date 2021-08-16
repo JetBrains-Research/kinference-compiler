@@ -19,20 +19,16 @@ abstract class MultidirectionalBroadcastingOperatorGenerator(
 
     protected abstract fun operatorImpl(inputs: List<String>, output: String, resultType: DataTypeInfo): CodeBlock
 
-    protected abstract fun resultType(inputType: DataTypeInfo): DataTypeInfo
+    protected abstract val resultType: DataTypeInfo
 
     override fun generateImplInferred() {
         builder.apply {
-            val inputInfo = operator.inputs.map { tensorInfo.getValue(it) }
-
             val actualInputShapes = inputInfo.map { it.shape }
             val resultShape = Broadcasting.broadcastShape(actualInputShapes)
             val inputShapes = actualInputShapes.map { unsqueezeFirst(it, resultShape.size) }
 
             val inputStrides = inputShapes.map { Strides(shape = it.dropLast(1).toIntArray()) }
             val resultStrides = Strides(shape = resultShape.dropLast(1).toIntArray())
-
-            val inputType = inputInfo[0].dataType
 
             operator.inputs.indices.forEach { index ->
                 addLine("val inputBlocks$index = input$index.array.blocks")
@@ -46,14 +42,14 @@ abstract class MultidirectionalBroadcastingOperatorGenerator(
                 |val resultBlocks = resultArray.blocks
                 |""".trimMargin(),
                 Strides::class,
-                resultType(inputType).tiledArrayTypeName()
+                resultType.tiledArrayTypeName()
             )
 
             if (resultShape.isEmpty()) {
                 addLine(operatorImpl(
                     operator.inputs.indices.map { index -> "inputBlocks$index[0][0]" },
                     "resultBlocks[0][0]",
-                    resultType(inputType)
+                    resultType
                 ))
             } else {
                 val oneBlockInRow = resultShape.hasOneBlockInRow()
@@ -77,7 +73,7 @@ abstract class MultidirectionalBroadcastingOperatorGenerator(
                             addLine(operatorImpl(
                                 inputIndices.mapIndexed { index, inputIndex -> "inputBlock$index[$inputIndex]" },
                                 "resultBlock[k]",
-                                resultType(inputType)
+                                resultType
                             ))
                         }
                     }
@@ -87,19 +83,15 @@ abstract class MultidirectionalBroadcastingOperatorGenerator(
             addLine(
                 "%L = %T(array = resultArray, strides = resultStrides) // %L",
                 nameMapping(output),
-                resultType(inputType).ndArrayTypeName(),
+                resultType.ndArrayTypeName(),
                 output
             )
-
-            tensorInfo[output] = TensorInfo(shape = resultShape, dataType = resultType(inputType))
         }
     }
 
     override fun resultInfo(): Map<String, TensorInfo> {
         val actualInputShapes = inputInfo.map { it.shape }
         val resultShape = Broadcasting.broadcastShape(actualInputShapes)
-
-        val resultType = resultType(inputInfo.first().dataType)
 
         return mapOf(operator.outputs.first() to TensorInfo(shape = resultShape, dataType = resultType))
     }

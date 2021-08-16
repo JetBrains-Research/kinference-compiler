@@ -2,6 +2,7 @@ package io.kinference.compiler.generation.operators
 
 import com.squareup.kotlinpoet.CodeBlock
 import io.kinference.compiler.generation.operators.common.DefaultOperatorGenerator
+import io.kinference.compiler.generation.operators.flow.WhereGenerator
 import io.kinference.compiler.generation.operators.layer.recurrent.GRUGenerator
 import io.kinference.compiler.generation.operators.logical.EqualGenerator
 import io.kinference.compiler.generation.operators.logical.GreaterGenerator
@@ -12,6 +13,7 @@ import io.kinference.compiler.generation.operators.math.MulGenerator
 import io.kinference.compiler.generation.operators.math.SubGenerator
 import io.kinference.compiler.generation.operators.tensor.*
 import io.kinference.operators.Operator
+import io.kinference.operators.flow.Where
 import io.kinference.operators.layer.recurrent.gru.GRU
 import io.kinference.operators.logical.Equal
 import io.kinference.operators.logical.Greater
@@ -49,6 +51,7 @@ class OperatorGenerator(
             is Sub -> SubGenerator(operator, info).generate()
             is Transpose -> TransposeGenerator(operator, info).generate()
             is Unsqueeze -> UnsqueezeGenerator(operator, info).generate()
+            is Where -> WhereGenerator(operator, info).generate()
             else -> DefaultOperatorGenerator(operator, info).generate()
         }
 }
