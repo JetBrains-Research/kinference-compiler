@@ -42,6 +42,7 @@ class OperatorGenerator(
             is Add -> AddGenerator(operator, info).generate()
             is Concat -> ConcatGenerator(operator, info).generate()
             is Equal -> EqualGenerator(operator, info).generate()
+            is Flatten -> FlattenGenerator(operator, info).generate()
             is Gather -> GatherGenerator(operator, info).generate()
             is Greater -> GreaterGenerator(operator, info).generate()
             is GRU -> GRUGenerator(operator, info).generate()
