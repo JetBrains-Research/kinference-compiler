@@ -15,6 +15,7 @@ kotlin {
 
 allprojects {
     repositories {
+        maven(url = "https://packages.jetbrains.team/maven/p/ki/maven")
         mavenCentral()
         jcenter()
     }

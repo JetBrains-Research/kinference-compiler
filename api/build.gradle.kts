@@ -4,11 +4,16 @@ version = rootProject.version
 kotlin {
     jvm {}
 
+    js {
+        browser()
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api(kotlin("stdlib"))
-                api("io.kinference:inference:0.1.2")
+                api("io.kinference:inference:0.1.4")
+                api("io.kinference:serialization:0.1.4")
             }
         }
 
@@ -29,6 +34,11 @@ kotlin {
                 implementation(kotlin("test-junit5"))
 
                 runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.2")
+            }
+        }
+
+        val jsMain by getting {
+            dependencies {
             }
         }
     }

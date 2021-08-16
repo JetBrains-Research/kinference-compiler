@@ -1,8 +1,10 @@
 package io.kinference.compiler.generation.initializers
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.MemberName
 import io.kinference.compiler.generation.models.CodeBlockGenerator
+import io.kinference.compiler.generation.utils.deserializerName
+import io.kinference.compiler.generation.utils.exact
+import io.kinference.compiler.generation.utils.ndArrayTypeName
+import io.kinference.compiler.generation.utils.tiledArrayTypeName
 import io.kinference.compiler.serialization.toByteArray
 import io.kinference.data.tensors.Tensor
 import io.kinference.ndarray.Strides
@@ -13,8 +15,7 @@ import java.io.File
 class TensorInitializerGenerator(
     private val outputDirectory: File,
     private val resourcePath: String,
-    private val tensor: Tensor,
-    private val nameMapping: (String) -> String
+    private val tensor: Tensor
 ) : CodeBlockGenerator() {
     override fun generateImpl() {
         val data = tensor.data
@@ -34,37 +35,22 @@ class TensorInitializerGenerator(
         val initializerFile = outputDirectory.resolve(initializerFileName)
         initializerFile.writeBytes(serializedTensor)
 
-        val dataTypeName = tensor.data.type.toString().toLowerCase().capitalize()
-        val ndArrayTypeName = ClassName(
-            "io.kinference.ndarray.arrays",
-            "${dataTypeName}NDArray"
-        )
-        val tiledArrayTypeName = ClassName(
-            "io.kinference.ndarray.arrays.tiled",
-            "${dataTypeName}TiledArray"
-        )
-        val deserializerName = MemberName(
-            "io.kinference.compiler.serialization",
-            "to${dataTypeName}TiledArray",
-            isExtension = true
-        )
-
+        val dataType = tensor.data.type.exact()
         builder.add(
             """
-                |${nameMapping(tensor.info.name)} = %T(
-                |    array = %T(
-                |        this::class.java.getResource(
-                |            "/${resourcePath}/${initializerFileName}"
-                |        )!!.readBytes().%M(
-                |            blockSize = $blockSize, blocksNum = $blocksNum
-                |        )
-                |    ),
-                |    strides = %T(shape = intArrayOf(${data.shape.joinToString()}))
-                |) // ${tensor.info.name} [initializer]
-                |""".trimMargin(),
-            ndArrayTypeName,
-            tiledArrayTypeName,
-            deserializerName,
+            |%T(
+            |    array = %T(
+            |        this::class.java.getResource(
+            |            "/${resourcePath}/${initializerFileName}"
+            |        )!!.readBytes().%M(
+            |            blockSize = $blockSize, blocksNum = $blocksNum
+            |        )
+            |    ),
+            |    strides = %T(shape = intArrayOf(${data.shape.joinToString()}))
+            |)""".trimMargin(),
+            dataType.ndArrayTypeName(),
+            dataType.tiledArrayTypeName(),
+            dataType.deserializerName(),
             Strides::class
         )
     }

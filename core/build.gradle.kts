@@ -13,16 +13,8 @@ kotlin {
             dependencies {
                 implementation(project(":api"))
 
-                implementation("io.kinference:inference:0.1.2")
                 implementation("com.squareup:kotlinpoet:1.9.0")
-            }
-        }
-
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit5"))
-
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.2")
+                implementation("io.kinference:inference:0.1.4")
             }
         }
     }

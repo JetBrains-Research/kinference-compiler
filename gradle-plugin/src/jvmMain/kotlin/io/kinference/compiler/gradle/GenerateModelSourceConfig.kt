@@ -20,6 +20,7 @@ class GenerateModelSourceConfig {
     }
 }
 
+@Suppress("UNUSED")
 fun Project.generateModelSource(configuration: GenerateModelSourceConfig.() -> Unit) {
     val config = GenerateModelSourceConfig().apply(configuration)
 
@@ -31,22 +32,25 @@ fun Project.generateModelSource(configuration: GenerateModelSourceConfig.() -> U
         config.implementationClass.isEmpty() -> throw InvalidUserDataException("implementationClass not set")
     }
     if (config.outputDirectory === NOT_SET) {
-        config.outputDirectory = File(projectDir, "generated/onnx")
+        config.outputDirectory = File(buildDir, "generated/onnx")
     }
 
-    config.sourceDirectory = config.outputDirectory.resolve("src")
+    config.sourceDirectory = config.outputDirectory.resolve("kotlin")
     config.resourceDirectory = config.outputDirectory.resolve("resources")
 
     (extensions.findByName("kotlin") as KotlinProjectExtension).apply {
-        sourceSets.getByName("main").apply {
+        sourceSets.findByName("main")?.apply {
             kotlin.srcDir(config.sourceDirectory)
         }
     }
     extensions.findByType(SourceSetContainer::class.java)?.apply {
-        getByName("main").apply {
+        findByName("main")?.apply {
             resources.srcDir(config.resourceDirectory)
         }
     }
+    project.tasks.findByName("compileKotlin")?.dependsOn(
+        KInferenceCompilerGradlePlugin.generateModelSourceTaskName
+    )
 
     project.tasks.withType(GenerateModelSourceTask::class.java).single().configurations.add(config)
 }

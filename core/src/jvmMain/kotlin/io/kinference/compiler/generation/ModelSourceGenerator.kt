@@ -4,7 +4,9 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import io.kinference.model.Model
 import java.io.File
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class ModelSourceGenerator(
     private val modelFile: File,
     private val sourceDirectory: File,
@@ -30,10 +32,14 @@ class ModelSourceGenerator(
 
         implementationClassFile.writeText(
             FileSpec.builder(implementationClassName.packageName, implementationClassName.simpleName)
-                .indent("    ")
+                .indent(indent)
                 .addType(modelClass)
                 .build()
                 .toString()
         )
+    }
+
+    companion object {
+        var indent = "    "
     }
 }

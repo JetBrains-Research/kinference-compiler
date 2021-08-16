@@ -5,6 +5,7 @@ pluginManagement {
         mavenLocal()
         gradlePluginPortal()
         jcenter()
+        maven(url = "https://packages.jetbrains.team/maven/p/ki/maven")
     }
 
     resolutionStrategy {

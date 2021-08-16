@@ -2,67 +2,54 @@ package io.kinference.compiler.serialization
 
 import java.nio.ByteBuffer
 
-actual fun ByteArray.toShortTiledArray(blockSize: Int, blocksNum: Int): Array<ShortArray> {
-    val buffer = ByteBuffer.wrap(this).asShortBuffer()
-    return Array(blocksNum) { ShortArray(blockSize) { buffer.get() } }
+private inline fun <reified T, reified V> ByteArray.toTiledArray(
+    blockSize: Int,
+    blocksNum: Int,
+    constructor: (Int, (Int) -> V) -> T,
+    crossinline getValue: ByteBuffer.() -> V
+): Array<T> {
+    val buffer = ByteBuffer.wrap(this)
+    return Array(blocksNum) { constructor(blockSize) { buffer.getValue() } }
 }
 
-actual fun ByteArray.toIntTiledArray(blockSize: Int, blocksNum: Int): Array<IntArray> {
-    val buffer = ByteBuffer.wrap(this).asIntBuffer()
-    return Array(blocksNum) { IntArray(blockSize) { buffer.get() } }
-}
+actual fun ByteArray.toShortTiledArray(blockSize: Int, blocksNum: Int): Array<ShortArray> =
+    toTiledArray(blockSize, blocksNum, ::ShortArray, ByteBuffer::getShort)
 
-actual fun ByteArray.toLongTiledArray(blockSize: Int, blocksNum: Int): Array<LongArray> {
-    val buffer = ByteBuffer.wrap(this).asLongBuffer()
-    return Array(blocksNum) { LongArray(blockSize) { buffer.get() } }
-}
+actual fun ByteArray.toIntTiledArray(blockSize: Int, blocksNum: Int): Array<IntArray> =
+    toTiledArray(blockSize, blocksNum, ::IntArray, ByteBuffer::getInt)
 
-actual fun ByteArray.toFloatTiledArray(blockSize: Int, blocksNum: Int): Array<FloatArray> {
-    val buffer = ByteBuffer.wrap(this).asFloatBuffer()
-    return Array(blocksNum) { FloatArray(blockSize) { buffer.get() } }
-}
+actual fun ByteArray.toLongTiledArray(blockSize: Int, blocksNum: Int): Array<LongArray> =
+    toTiledArray(blockSize, blocksNum, ::LongArray, ByteBuffer::getLong)
 
-actual fun ByteArray.toDoubleTiledArray(blockSize: Int, blocksNum: Int): Array<DoubleArray> {
-    val buffer = ByteBuffer.wrap(this).asDoubleBuffer()
-    return Array(blocksNum) { DoubleArray(blockSize) { buffer.get() } }
-}
+actual fun ByteArray.toFloatTiledArray(blockSize: Int, blocksNum: Int): Array<FloatArray> =
+    toTiledArray(blockSize, blocksNum, ::FloatArray, ByteBuffer::getFloat)
 
-actual fun Array<ShortArray>.toByteArray(): ByteArray {
-    val buffer = ByteBuffer.allocate(if (isEmpty()) 0 else size * first().size * Short.SIZE_BYTES)
+actual fun ByteArray.toDoubleTiledArray(blockSize: Int, blocksNum: Int): Array<DoubleArray> =
+    toTiledArray(blockSize, blocksNum, ::DoubleArray, ByteBuffer::getDouble)
+
+private inline fun <reified T> Array<T>.toByteArray(
+    sizeBytes: Int,
+    getSize: T.() -> Int,
+    process: ByteBuffer.(T) -> Unit,
+): ByteArray {
+    val buffer = ByteBuffer.allocate(if (isEmpty()) 0 else size * first().getSize() * sizeBytes)
     forEach {
-        it.forEach { value -> buffer.putShort(value) }
+        buffer.process(it)
     }
     return buffer.array()
 }
 
-actual fun Array<IntArray>.toByteArray(): ByteArray {
-    val buffer = ByteBuffer.allocate(if (isEmpty()) 0 else size * first().size * Int.SIZE_BYTES)
-    forEach {
-        it.forEach { value -> buffer.putInt(value) }
-    }
-    return buffer.array()
-}
+actual fun Array<ShortArray>.toByteArray(): ByteArray =
+    toByteArray(Short.SIZE_BYTES, { size }) { it.forEach { value -> putShort(value) } }
 
-actual fun Array<LongArray>.toByteArray(): ByteArray {
-    val buffer = ByteBuffer.allocate(if (isEmpty()) 0 else size * first().size * Long.SIZE_BYTES)
-    forEach {
-        it.forEach { value -> buffer.putLong(value) }
-    }
-    return buffer.array()
-}
+actual fun Array<IntArray>.toByteArray(): ByteArray =
+    toByteArray(Int.SIZE_BYTES, { size }) { it.forEach { value -> putInt(value) } }
 
-actual fun Array<FloatArray>.toByteArray(): ByteArray {
-    val buffer = ByteBuffer.allocate(if (isEmpty()) 0 else size * first().size * Float.SIZE_BYTES)
-    forEach {
-        it.forEach { value -> buffer.putFloat(value) }
-    }
-    return buffer.array()
-}
+actual fun Array<LongArray>.toByteArray(): ByteArray =
+    toByteArray(Long.SIZE_BYTES, { size }) { it.forEach { value -> putLong(value) } }
 
-actual fun Array<DoubleArray>.toByteArray(): ByteArray {
-    val buffer = ByteBuffer.allocate(if (isEmpty()) 0 else size * first().size * Double.SIZE_BYTES)
-    forEach {
-        it.forEach { value -> buffer.putDouble(value) }
-    }
-    return buffer.array()
-}
+actual fun Array<FloatArray>.toByteArray(): ByteArray =
+    toByteArray(Float.SIZE_BYTES, { size }) { it.forEach { value -> putFloat(value) } }
+
+actual fun Array<DoubleArray>.toByteArray(): ByteArray =
+    toByteArray(Double.SIZE_BYTES, { size }) { it.forEach { value -> putDouble(value) } }
