@@ -2,10 +2,11 @@ package io.kinference.compiler.generation
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.TypeSpec
-import io.kinference.compiler.api.GeneratedONNXModel
+import io.kinference.model.Model
 import java.io.File
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class ModelSourceGenerator(
     private val modelFile: File,
     private val sourceDirectory: File,
@@ -21,16 +22,24 @@ class ModelSourceGenerator(
         implementationClassFile.parentFile.mkdirs()
         implementationClassFile.createNewFile()
 
+        val model = Model.load(modelFile.readBytes())
+
         val implementationClassName = ClassName(
             implementationClass.replaceAfterLast(".", "").dropLast(1),
             implementationClass.substringAfterLast(".")
         )
+        val modelClass = ModelClassGenerator(model.graph, resourceDirectory, implementationClassName).generate()
 
         implementationClassFile.writeText(
             FileSpec.builder(implementationClassName.packageName, implementationClassName.simpleName)
-                .addType(TypeSpec.classBuilder(implementationClassName).build())
+                .indent(indent)
+                .addType(modelClass)
                 .build()
                 .toString()
         )
+    }
+
+    companion object {
+        const val indent = "    "
     }
 }
