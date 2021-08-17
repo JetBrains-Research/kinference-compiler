@@ -24,6 +24,11 @@ class ConcatGenerator(
             inputInfo.indices.forEach { index ->
                 addLine("val input${index}Blocks = input${index}.array.blocks")
             }
+            inputInfo.forEachIndexed { index, input ->
+                if (!input.shape.hasOneBlockInRow()) {
+                    addLine("val input${index}BlocksInRow = ${input.shape.last()} / input${index}.array.blockSize")
+                }
+            }
             addLine(
                 """
                 |val resultStrides = %T(shape = intArrayOf(${resultShape.joinToString()}))
@@ -33,12 +38,27 @@ class ConcatGenerator(
                 resultType.tiledArrayTypeName()
             )
 
-            inputInfo.forEachIndexed { index, input ->
-                if (!input.shape.hasOneBlockInRow()) {
-                    addLine("val input${index}BlocksInRow = ${input.shape.last()} / input${index}.array.blockSize")
+            if (actualAxis != resultShape.lastIndex) {
+                addLine("val resultBlocks = resultArray.blocks")
+                inputInfo.forEachIndexed { index, input ->
+                    val matrixPartSize = input.shape.slice(actualAxis until input.shape.lastIndex)
+                    addLine("val input${index}MatrixPartSize = $matrixPartSize * input${index}BlocksInRow")
                 }
-            }
-            if (actualAxis == resultShape.lastIndex) {
+                addLine("var resultBlockIndex = 0")
+                val numIterations = resultShape.slice(0 until actualAxis).fold(1, Int::times)
+                generateLoop("i", 0, numIterations) {
+                    inputInfo.indices.forEach { index ->
+                        addLine("val input${index}Offset = i * input${index}MatrixPartSize")
+                        generateLoop(
+                            "j",
+                            "input${index}Offset",
+                            "input${index}Offset + input${index}MatrixPartSize"
+                        ) {
+                            addLine("input${index}Blocks[j].copyInto(resultBlocks[resultBlockIndex++])")
+                        }
+                    }
+                }
+            } else {
                 addLine("val resultPointer = resultArray.pointer()")
                 generateLoop("i", 0, "resultArray.blocksNum") {
                     inputInfo.forEachIndexed { index, input ->
@@ -55,8 +75,6 @@ class ConcatGenerator(
                         }
                     }
                 }
-            } else {
-                TODO()
             }
             val output = operator.outputs.first()
             addLine(
