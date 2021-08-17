@@ -80,7 +80,7 @@ class MatMulGenerator(
     override fun resultInfo(): Map<String, TensorInfo> {
         val actualInputShapes = inputInfo.map { it.shape }
         if (actualInputShapes.any { it.size < 2 }) {
-            TODO()
+            TODO("Broadcasting 1D matrices for MatMul is not supported yet")
         }
         val resultShape = Broadcasting.broadcastShapeForMatmul(actualInputShapes[0], actualInputShapes[1])
 
