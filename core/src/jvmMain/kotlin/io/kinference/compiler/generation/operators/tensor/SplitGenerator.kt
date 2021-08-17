@@ -19,7 +19,7 @@ class SplitGenerator(
 
     override fun resultInfo(): Map<String, TensorInfo> {
         if (split == null) {
-            TODO()
+            TODO("Split with unspecified part sizes is not supported yet")
         }
         val (inputShape, dataType) = inputInfo.first()
         val actualAxis = inputShape.actualAxis(axis)
