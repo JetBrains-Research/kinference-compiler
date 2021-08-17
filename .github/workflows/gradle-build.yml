@@ -20,10 +20,8 @@ jobs:
         run: ./gradlew publishToMavenLocal --console=plain
         
       - name: Run tests
-        run: |
-          cd tests
-          ./gradlew test --console=plain
-          cd ..
+        run: ./gradlew test --console=plain
+        working-directory: ./tests
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v2
