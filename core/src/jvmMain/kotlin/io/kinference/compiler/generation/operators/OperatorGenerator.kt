@@ -36,7 +36,7 @@ import kotlin.time.ExperimentalTime
 class OperatorGenerator(
     private val operator: Operator<*, *>,
     info: OperatorGenerationInfo
-) : BaseOperatorGenerator(info) {
+) : BaseOperatorGenerator(operator, info) {
     override fun generateImpl() {}
 
     override fun generate(): CodeBlock =

@@ -45,7 +45,7 @@ class MatMulGenerator(
                 addLine("input0.dot(input1, result)")
             } else {
                 val blocksInMatrix: (arrayName: String, shape: IntArray) -> Unit = { arrayName, shape ->
-                    addLine("val ${arrayName}BlocksInMatrix = ${shape[0]} * ${shape[1]} / $arrayName.array.blockSize")
+                    addLine("val ${arrayName}BlocksInMatrix = ${shape[0] * shape[1] / shape.blockSize()}")
                 }
 
                 inputMatrixShapes.forEachIndexed { index, shape ->
@@ -60,7 +60,9 @@ class MatMulGenerator(
                 addLine("val resultBlocks = result.array.blocks")
                 endLine()
 
-                generateNestedLoops({ "i$it" }, resultOuterShape.map { 0 to it }) {
+                val loopIndices = IndexStorage()
+
+                generateNestedLoops({ "i$it" }, resultOuterShape.map { 0 to it }, loopIndices) {
                     inputStrides.forEachIndexed { index, strides ->
                         matrixSlice("input$index", strides, inputMatrixShapes[index], resultType)
                     }

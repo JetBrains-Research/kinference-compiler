@@ -38,3 +38,7 @@ fun DataTypeInfo.deserializerName() = MemberName(
     "to${dataTypeName()}TiledArray",
     isExtension = true
 )
+
+fun DataTypeInfo.arrayTypeName() = "${dataTypeName()}Array"
+
+fun DataTypeInfo.funArrayOf() = "${dataTypeName().toLowerCase()}ArrayOf"
