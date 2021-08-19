@@ -11,7 +11,8 @@ import kotlin.time.ExperimentalTime
 class FlattenGenerator(
     private val operator: Flatten,
     info: OperatorGenerationInfo
-) : TypeAndShapeAwareOperatorGenerator(operator, info) {
+) : BaseReshapeGenerator(operator, info) {
+    override val inputIndex: Int = 0
 
     private val axis = operator.getAttribute<Number>("axis").toInt()
 
