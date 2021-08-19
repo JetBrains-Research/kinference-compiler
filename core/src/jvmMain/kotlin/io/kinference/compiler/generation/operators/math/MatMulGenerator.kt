@@ -11,6 +11,13 @@ import io.kinference.ndarray.broadcasting.unsqueezeFirst
 import io.kinference.operators.math.MatMul
 import kotlin.time.ExperimentalTime
 
+/**
+ * MatMul generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#MatMul)
+ *
+ * KInference class: [MatMul]
+ */
 @OptIn(ExperimentalTime::class)
 class MatMulGenerator(
     private val operator: MatMul,

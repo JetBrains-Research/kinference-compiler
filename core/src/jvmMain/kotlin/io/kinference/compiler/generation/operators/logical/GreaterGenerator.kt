@@ -6,6 +6,13 @@ import io.kinference.compiler.generation.utils.DataTypeInfo
 import io.kinference.operators.logical.Greater
 import kotlin.time.ExperimentalTime
 
+/**
+ * Greater generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Greater)
+ *
+ * KInference class: [Greater]
+ */
 @OptIn(ExperimentalTime::class)
 class GreaterGenerator(
     operator: Greater,

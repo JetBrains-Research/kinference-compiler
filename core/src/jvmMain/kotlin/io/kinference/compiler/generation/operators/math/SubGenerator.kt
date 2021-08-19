@@ -7,6 +7,13 @@ import io.kinference.compiler.generation.utils.dataTypeName
 import io.kinference.operators.math.Sub
 import kotlin.time.ExperimentalTime
 
+/**
+ * Sub generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sub)
+ *
+ * KInference class: [Sub]
+ */
 @OptIn(ExperimentalTime::class)
 class SubGenerator(
     operator: Sub,

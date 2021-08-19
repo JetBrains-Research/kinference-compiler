@@ -8,6 +8,7 @@ import io.kinference.ndarray.Strides
 import io.kinference.operators.Operator
 import kotlin.time.ExperimentalTime
 
+/* Base class for reshape operator generators */
 @OptIn(ExperimentalTime::class)
 abstract class BaseReshapeGenerator(
     private val operator: Operator<*, *>,

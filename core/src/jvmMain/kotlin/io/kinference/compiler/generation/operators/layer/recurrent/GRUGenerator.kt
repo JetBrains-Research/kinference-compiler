@@ -6,6 +6,13 @@ import io.kinference.compiler.generation.operators.common.TypeAndShapeAwareOpera
 import io.kinference.operators.layer.recurrent.gru.GRU
 import kotlin.time.ExperimentalTime
 
+/**
+ * GRU generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#GRU)
+ *
+ * KInference class: [GRU]
+ */
 @OptIn(ExperimentalTime::class)
 class GRUGenerator(
     private val operator: GRU,

@@ -8,6 +8,13 @@ import io.kinference.ndarray.Strides
 import io.kinference.operators.tensor.Concat
 import kotlin.time.ExperimentalTime
 
+/**
+ * Concat generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Concat)
+ *
+ * KInference class: [Concat]
+ */
 @OptIn(ExperimentalTime::class)
 class ConcatGenerator(
     private val operator: Concat,
