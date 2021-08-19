@@ -1,6 +1,7 @@
 package io.kinference.compiler.tests
 
 import io.kinference.compiler.utils.TestData
+import io.kinference.compiler.utils.getBlocks
 import io.kinference.compiler.utils.getTestData
 import io.kinference.data.tensors.Tensor
 import io.kinference.data.tensors.asTensor
@@ -20,13 +21,16 @@ class ModelTest {
 
         @JvmStatic
         fun data(): List<Arguments> =
-            testData.list()!!.flatMap { testDirName ->
-                val testDir = File(testData, testDirName)
-                testDir.list { _, name -> name.startsWith("test_data_set_") }!!.map { dataSetName ->
-                    testDir to testDir.resolve(dataSetName)
+            testData.list()!!.flatMap { testSuitName ->
+                val testSuitDirectory = File(testData, testSuitName)
+                testSuitDirectory.list()!!.map { testSuitDirectory to it }
+            }.flatMap { (testSuitDirectory, testName) ->
+                val testDirectory = File(testSuitDirectory, testName)
+                testDirectory.list { _, name -> name.startsWith("test_data_set_") }!!.map { datasetName ->
+                    testDirectory to testDirectory.resolve(datasetName)
                 }
-            }.map { (testDir, dataSet) ->
-                Arguments.of(getTestData(testDir, dataSet))
+            }.map { (testDirectory, dataset) ->
+                Arguments.of(getTestData(testDirectory, dataset))
             }
     }
 
@@ -42,9 +46,9 @@ class ModelTest {
         assertTrue(expectedOutputs.indices.all { index -> expectedOutputs[index].info.name == actualOutputs[index].info.name })
         assertTrue(expectedOutputs.indices.all { index -> expectedOutputs[index].data.shape.contentEquals(actualOutputs[index].data.shape) })
         assertTrue(expectedOutputs.indices.all { index ->
-            val expected = expectedOutputs[index].data as FloatNDArray
-            val actual = actualOutputs[index].data as FloatNDArray
-            expected.array.blocks.contentDeepEquals(actual.array.blocks)
+            val expected = expectedOutputs[index].data
+            val actual = actualOutputs[index].data
+            expected.getBlocks().contentDeepEquals(actual.getBlocks())
         })
     }
 }
