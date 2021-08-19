@@ -31,6 +31,7 @@ class ConcatGenerator(
             inputInfo.indices.forEach { index ->
                 addLine("val input${index}Blocks = input${index}.array.blocks")
             }
+
             addLine(
                 """
                 |val resultStrides = %T(shape = intArrayOf(${resultShape.joinToString()}))
