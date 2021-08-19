@@ -35,6 +35,11 @@ class ModelClassGenerator(
     private val nameMapping: (String) -> String = { name -> "tensors[${nameOrder[name]}]" }
     private val tensorInfo: MutableMap<String, TensorInfo> = HashMap()
 
+    private val tensorLastUsageIndex: MutableMap<String, Int> = HashMap()
+    private val tensorLastUsageIndexLambda: (String) -> Int = { name ->
+        tensorLastUsageIndex.getOrDefault(name, Int.MAX_VALUE)
+    }
+
     private val operatorsListBuilder = ListInitBuilder()
 
     init {
@@ -60,12 +65,19 @@ class ModelClassGenerator(
             }
         }
 
-        graph.operators.forEach { operator ->
+        graph.operators.forEachIndexed { operatorIndex, operator ->
+            operator.inputs.forEach {
+                tensorLastUsageIndex[it] = operatorIndex
+            }
+
             (operator.inputs + operator.outputs).forEach {
                 if (!nameOrder.contains(it)) {
                     nameOrder[it] = nameOrder.size
                 }
             }
+        }
+        (graph.initializers.map { it.info.name } + graph.outputs.map { it.name }).forEach {
+            tensorLastUsageIndex[it] = Int.MAX_VALUE
         }
     }
 
@@ -120,9 +132,11 @@ class ModelClassGenerator(
             addParameter("inputTensors", ioMapType)
             returns(ioMapType)
 
+            addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNUSED_VARIABLE").build())
+
             addCode(generateInitialization())
-            graph.operators.forEach { operator ->
-                addCode(generateOperatorScope(operator))
+            graph.operators.forEachIndexed { index, operator ->
+                addCode(generateOperatorScope(operator, index))
             }
             addCode(generateReturn())
         }.build()
@@ -153,12 +167,12 @@ class ModelClassGenerator(
             }
         }.build()
 
-    private fun generateOperatorScope(operator: Operator<*, *>): CodeBlock =
+    private fun generateOperatorScope(operator: Operator<*, *>, operatorIndex: Int): CodeBlock =
         CodeBlock.builder().apply {
             addLine("// ${operator.info.name}")
             withControlFlow("run") {
                 add(OperatorGenerator(operator, info = OperatorGenerationInfo(
-                    nameMapping, tensorInfo, operatorsListBuilder
+                    nameMapping, tensorLastUsageIndexLambda, tensorInfo, operatorsListBuilder, operatorIndex
                 )).generate())
             }
         }.build()

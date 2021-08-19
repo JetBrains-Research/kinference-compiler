@@ -31,7 +31,7 @@ abstract class MultidirectionalBroadcastingOperatorGenerator(
             val resultStrides = Strides(shape = resultShape.dropLast(1).toIntArray())
 
             operator.inputs.indices.forEach { index ->
-                addLine("val inputBlocks$index = input$index.array.blocks")
+                addLine("val input${index}Blocks = input$index.array.blocks")
             }
             endLine()
 
@@ -47,32 +47,31 @@ abstract class MultidirectionalBroadcastingOperatorGenerator(
 
             if (resultShape.isEmpty()) {
                 addLine(operatorImpl(
-                    operator.inputs.indices.map { index -> "inputBlocks$index[0][0]" },
+                    operator.inputs.indices.map { index -> "input${index}Blocks[0][0]" },
                     "resultBlocks[0][0]",
                     resultType
                 ))
             } else {
-                val oneBlockInRow = resultShape.hasOneBlockInRow()
-                if (!resultShape.hasOneBlockInRow()) {
-                    addLine("val blocksInRow = resultStrides.shape.last() / resultArray.blockSize")
-                }
-                generateNestedLoops({ "i$it" }, resultStrides.shape.map { 0 to it }) {
-                    generateLoop("j", 0, "blocksInRow", toGenerate = !oneBlockInRow) {
-                        inputStrides.forEachIndexed { index, strides ->
-                            val oneBlockInInputRow = oneBlockInRow || inputShapes[index].last() == 1
-                            addLine("val inputBlock$index = inputBlocks$index[${blockIndex(
-                                strides, { "i$it" }, "blocksInRow", "j", oneBlockInInputRow
-                            )}]")
-                        }
-                        addLine("val resultBlock = resultBlocks[${blockIndex(
-                            resultStrides, { "i$it" }, "blocksInRow", "j", oneBlockInRow
-                        )}]")
+                val loopIndices = IndexStorage()
 
-                        generateLoop("k", 0, "resultArray.blockSize") {
-                            val inputIndices = inputShapes.map { if (it.last() == 1) "0" else "k" }
+                generateNestedLoops({ "i$it" }, resultStrides.shape.map { 0 to it }, loopIndices) {
+                    generateLoop("block", 0 to resultShape.blocksInRow(), loopIndices) {
+                        (inputStrides.mapIndexed { index, strides -> "input$index" to strides } + ("result" to resultStrides)).forEach { (name, strides) ->
+                            addLine("val ${name}Block = ${name}Blocks[${
+                                blockIndex(
+                                    strides,
+                                    mainIndices = { "i$it" },
+                                    blockOffset = "block",
+                                    indexStorage = loopIndices
+                                )
+                            }]")
+                        }
+
+                        generateLoop("idx", 0 to resultShape.blockSize(), loopIndices) {
+                            val inputIndices = inputShapes.map { if (it.last() == 1) "0" else loopIndices.inline("idx") }
                             addLine(operatorImpl(
-                                inputIndices.mapIndexed { index, inputIndex -> "inputBlock$index[$inputIndex]" },
-                                "resultBlock[k]",
+                                inputIndices.mapIndexed { index, inputIndex -> "input${index}Block[$inputIndex]" },
+                                "resultBlock[${loopIndices.inline("idx")}]",
                                 resultType
                             ))
                         }

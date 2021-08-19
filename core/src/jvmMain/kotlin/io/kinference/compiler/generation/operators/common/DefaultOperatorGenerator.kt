@@ -19,7 +19,7 @@ import kotlin.time.ExperimentalTime
 class DefaultOperatorGenerator(
     private val operator: Operator<*, *>,
     info: OperatorGenerationInfo
-) : BaseOperatorGenerator(info) {
+) : BaseOperatorGenerator(operator, info) {
     override fun generateImpl() {
         builder.apply {
             addLine("val operator = operators[%L]", operatorsListBuilder.size)
