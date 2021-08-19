@@ -12,7 +12,8 @@ import kotlin.time.ExperimentalTime
 class UnsqueezeGenerator(
     private val operator: Unsqueeze,
     info: OperatorGenerationInfo
-) : TypeAndShapeAwareOperatorGenerator(operator, info) {
+) : BaseReshapeGenerator(operator, info) {
+    override val inputIndex: Int = 0
 
     private val axes: IntArray = operator.getAttribute<LongArray>("axes").toIntArray()
 

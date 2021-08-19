@@ -13,7 +13,9 @@ import kotlin.time.ExperimentalTime
 class ReshapeGenerator(
     private val operator: Reshape,
     info: OperatorGenerationInfo
-) : TypeAndShapeAwareOperatorGenerator(operator, info) {
+) : BaseReshapeGenerator(operator, info) {
+    override val inputIndex: Int = 0
+
     override fun resultInfo(): Map<String, TensorInfo> {
         val (input, targetShape) = inputInfo
         if (targetShape.tensor == null) {
