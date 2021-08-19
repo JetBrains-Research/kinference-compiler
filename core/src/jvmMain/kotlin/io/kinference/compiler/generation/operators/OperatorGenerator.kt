@@ -10,6 +10,8 @@ import io.kinference.compiler.generation.operators.math.AddGenerator
 import io.kinference.compiler.generation.operators.math.MatMulGenerator
 import io.kinference.compiler.generation.operators.math.MulGenerator
 import io.kinference.compiler.generation.operators.math.SubGenerator
+import io.kinference.compiler.generation.operators.tensor.ConcatGenerator
+import io.kinference.compiler.generation.operators.tensor.GatherGenerator
 import io.kinference.operators.Operator
 import io.kinference.operators.flow.Where
 import io.kinference.operators.logical.Equal
@@ -19,6 +21,8 @@ import io.kinference.operators.math.Add
 import io.kinference.operators.math.MatMul
 import io.kinference.operators.math.Mul
 import io.kinference.operators.math.Sub
+import io.kinference.operators.tensor.Concat
+import io.kinference.operators.tensor.Gather
 import kotlin.time.ExperimentalTime
 
 /* Entry point for operators generation.
@@ -34,7 +38,9 @@ class OperatorGenerator(
     override fun generate(): CodeBlock =
         when (operator) {
             is Add -> AddGenerator(operator, info).generate()
+            is Concat -> ConcatGenerator(operator, info).generate()
             is Equal -> EqualGenerator(operator, info).generate()
+            is Gather -> GatherGenerator(operator, info).generate()
             is Greater -> GreaterGenerator(operator, info).generate()
             is MatMul -> MatMulGenerator(operator, info).generate()
             is Mul -> MulGenerator(operator, info).generate()
