@@ -28,3 +28,18 @@ fun CodeBlock.Builder.withControlFlow(
     builderAction()
     endControlFlow()
 }
+
+fun CodeBlock.Builder.withControlFlow(
+    condition: Boolean,
+    controlFlow: String,
+    vararg args: Any?,
+    builderAction: CodeBlock.Builder.() -> Unit
+) {
+    if (condition) {
+        withControlFlow(controlFlow, *args) {
+            builderAction()
+        }
+    } else {
+        builderAction()
+    }
+}

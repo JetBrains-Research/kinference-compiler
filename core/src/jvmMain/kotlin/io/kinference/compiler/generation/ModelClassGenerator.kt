@@ -214,19 +214,15 @@ class ModelClassGenerator(
         CodeBlock.builder().apply {
             addLine("/* ${operator.info.name} */")
             withControlFlow("run") {
-                if (implementProfiling) {
-                    beginControlFlow("profilingContext.profile(%S)", operator.info.name)
-                }
-                add(OperatorGenerator(operator, info = OperatorGenerationInfo(
-                    nameMapping,
-                    tensorLastUsageIndexLambda,
-                    tensorInfo,
-                    operatorsListBuilder,
-                    preparedContextBuilder,
-                    operatorIndex
-                )).generate())
-                if (implementProfiling) {
-                    endControlFlow()
+                withControlFlow(implementProfiling, "profilingContext.profile(%S)", operator.info.name) {
+                    add(OperatorGenerator(operator, info = OperatorGenerationInfo(
+                        nameMapping,
+                        tensorLastUsageIndexLambda,
+                        tensorInfo,
+                        operatorsListBuilder,
+                        preparedContextBuilder,
+                        operatorIndex
+                    )).generate())
                 }
             }
         }.build()
