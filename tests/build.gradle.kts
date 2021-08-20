@@ -43,11 +43,14 @@ tasks.withType<KotlinJvmCompile> {
 
 val testResources = projectDir.resolve("src/test/resources/test_data")
 
-testResources.list()?.forEach { dirName ->
-    val dir = testResources.resolve(dirName)
-    generateModelSource {
-        modelFile = dir.resolve("model.onnx")
-        implementationClass = File(dir, "model_class_name.txt").readText()
+testResources.list()?.forEach { testSuitName ->
+    val testSuitDirectory = testResources.resolve(testSuitName)
+    testSuitDirectory.list()?.forEach { testName ->
+        val testDirectory = testSuitDirectory.resolve(testName)
+        generateModelSource {
+            modelFile = testDirectory.resolve("model.onnx")
+            implementationClass = File(testDirectory, "model_class_name.txt").readText()
+        }
     }
 }
 

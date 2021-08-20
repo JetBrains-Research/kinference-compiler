@@ -6,6 +6,7 @@ import io.kinference.compiler.api.GeneratedONNXModel
 import io.kinference.compiler.generation.info.TensorInfo
 import io.kinference.compiler.generation.initializers.InitializerGenerator
 import io.kinference.compiler.generation.models.ClassGenerator
+import io.kinference.compiler.generation.context.ContextBuilder
 import io.kinference.compiler.generation.models.ListInitBuilder
 import io.kinference.compiler.generation.operators.OperatorGenerationInfo
 import io.kinference.compiler.generation.operators.OperatorGenerator
@@ -13,6 +14,7 @@ import io.kinference.compiler.generation.utils.addLine
 import io.kinference.compiler.generation.utils.exact
 import io.kinference.compiler.generation.utils.withControlFlow
 import io.kinference.data.tensors.Tensor
+import io.kinference.graph.Context
 import io.kinference.graph.Graph
 import io.kinference.ndarray.arrays.NDArray
 import io.kinference.operators.Operator
@@ -26,10 +28,13 @@ import kotlin.time.ExperimentalTime
 class ModelClassGenerator(
     private val graph: Graph,
     resourceDirectory: File,
-    implementationClass: ClassName
+    private val implementationClass: ClassName
 ) : ClassGenerator(implementationClass) {
-    private val resourcePath = "onnx/initializers/${implementationClass.canonicalName}".replace(".", "/")
-    private val initializersOutputDirectory = resourceDirectory.resolve(resourcePath)
+    private val initializersPath = "onnx/initializers/".modelResourcePath()
+    private val preparedTensorsPath = "onnx/prepared/".modelResourcePath()
+
+    private val initializersOutputDirectory = resourceDirectory.resolve(initializersPath)
+    private val preparedTensorsOutputDirectory = resourceDirectory.resolve(preparedTensorsPath)
 
     private val nameOrder: MutableMap<String, Int> = HashMap()
     private val nameMapping: (String) -> String = { name -> "tensors[${nameOrder[name]}]" }
@@ -41,9 +46,11 @@ class ModelClassGenerator(
     }
 
     private val operatorsListBuilder = ListInitBuilder()
+    private val preparedContextBuilder = ContextBuilder(preparedTensorsOutputDirectory, preparedTensorsPath)
 
     init {
         initializersOutputDirectory.mkdirs()
+        preparedTensorsOutputDirectory.mkdirs()
 
         graph.initializers.forEachIndexed { index, tensor ->
             nameOrder[tensor.info.name] = index
@@ -81,6 +88,9 @@ class ModelClassGenerator(
         }
     }
 
+    private fun String.modelResourcePath() =
+        "$this${implementationClass.canonicalName}".replace(".", "/")
+
     override fun generateImpl() {
         builder.apply {
             addSuperinterface(GeneratedONNXModel::class)
@@ -92,6 +102,7 @@ class ModelClassGenerator(
             addFunction(generatePredictFunction())
             addProperty(generateOperatorsProperty())
             addProperty(generateInitializersProperty())
+            addProperty(generatePreparedTensorsContextProperty())
         }
     }
 
@@ -106,12 +117,21 @@ class ModelClassGenerator(
                     addItem(
                         InitializerGenerator(
                             initializersOutputDirectory,
-                            resourcePath,
+                            initializersPath,
                             it
                         ).generate()
                     )
                 }
             }.generate()
+        ).build()
+
+    private fun generatePreparedTensorsContextProperty(): PropertySpec =
+        PropertySpec.builder(
+            "preparedTensorsContext",
+            Context::class,
+            KModifier.PRIVATE
+        ).initializer(
+            preparedContextBuilder.generate()
         ).build()
 
     private fun generateOperatorsProperty(): PropertySpec =
@@ -172,7 +192,12 @@ class ModelClassGenerator(
             addLine("// ${operator.info.name}")
             withControlFlow("run") {
                 add(OperatorGenerator(operator, info = OperatorGenerationInfo(
-                    nameMapping, tensorLastUsageIndexLambda, tensorInfo, operatorsListBuilder, operatorIndex
+                    nameMapping,
+                    tensorLastUsageIndexLambda,
+                    tensorInfo,
+                    operatorsListBuilder,
+                    preparedContextBuilder,
+                    operatorIndex
                 )).generate())
             }
         }.build()
