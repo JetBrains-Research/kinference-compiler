@@ -87,7 +87,7 @@ class ModelClassGenerator(
                 }
             }
         }
-        (graph.initializers.map { it.info.name } + graph.outputs.map { it.name }).forEach {
+        (graph.initializers.map { it.info.name } + graph.availableInputs + graph.outputs.map { it.name }).forEach {
             tensorLastUsageIndex[it] = Int.MAX_VALUE
         }
     }
