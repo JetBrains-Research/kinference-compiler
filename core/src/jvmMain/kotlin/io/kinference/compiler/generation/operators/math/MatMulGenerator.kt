@@ -11,6 +11,13 @@ import io.kinference.ndarray.broadcasting.unsqueezeFirst
 import io.kinference.operators.math.MatMul
 import kotlin.time.ExperimentalTime
 
+/**
+ * MatMul generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#MatMul)
+ *
+ * KInference class: [MatMul]
+ */
 @OptIn(ExperimentalTime::class)
 class MatMulGenerator(
     private val operator: MatMul,
@@ -45,7 +52,7 @@ class MatMulGenerator(
                 addLine("input0.dot(input1, result)")
             } else {
                 val blocksInMatrix: (arrayName: String, shape: IntArray) -> Unit = { arrayName, shape ->
-                    addLine("val ${arrayName}BlocksInMatrix = ${shape[0]} * ${shape[1]} / $arrayName.array.blockSize")
+                    addLine("val ${arrayName}BlocksInMatrix = ${shape[0] * shape[1] / shape.blockSize()}")
                 }
 
                 inputMatrixShapes.forEachIndexed { index, shape ->
@@ -60,7 +67,9 @@ class MatMulGenerator(
                 addLine("val resultBlocks = result.array.blocks")
                 endLine()
 
-                generateNestedLoops({ "i$it" }, resultOuterShape.map { 0 to it }) {
+                val loopIndices = IndexStorage()
+
+                generateNestedLoops({ "i$it" }, resultOuterShape.map { 0 to it }, loopIndices) {
                     inputStrides.forEachIndexed { index, strides ->
                         matrixSlice("input$index", strides, inputMatrixShapes[index], resultType)
                     }

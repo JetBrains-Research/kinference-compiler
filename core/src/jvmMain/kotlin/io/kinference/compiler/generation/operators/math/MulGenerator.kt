@@ -7,6 +7,13 @@ import io.kinference.compiler.generation.utils.dataTypeName
 import io.kinference.operators.math.Mul
 import kotlin.time.ExperimentalTime
 
+/**
+ * Mul generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Mul)
+ *
+ * KInference class: [Mul]
+ */
 @OptIn(ExperimentalTime::class)
 class MulGenerator(
     operator: Mul,

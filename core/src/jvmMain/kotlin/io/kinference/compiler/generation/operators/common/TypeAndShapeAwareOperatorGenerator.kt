@@ -14,7 +14,7 @@ import kotlin.time.ExperimentalTime
 abstract class TypeAndShapeAwareOperatorGenerator(
     private val operator: Operator<*, *>,
     info: OperatorGenerationInfo
-) : BaseOperatorGenerator(info) {
+) : BaseOperatorGenerator(operator, info) {
     protected open val inputsToInfer: List<String> = operator.inputs
 
     protected val inputInfo: List<TensorInfo>

@@ -8,6 +8,13 @@ import io.kinference.ndarray.Strides
 import io.kinference.operators.tensor.Concat
 import kotlin.time.ExperimentalTime
 
+/**
+ * Concat generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Concat)
+ *
+ * KInference class: [Concat]
+ */
 @OptIn(ExperimentalTime::class)
 class ConcatGenerator(
     private val operator: Concat,
@@ -24,11 +31,7 @@ class ConcatGenerator(
             inputInfo.indices.forEach { index ->
                 addLine("val input${index}Blocks = input${index}.array.blocks")
             }
-            inputInfo.forEachIndexed { index, input ->
-                if (!input.shape.hasOneBlockInRow()) {
-                    addLine("val input${index}BlocksInRow = ${input.shape.last()} / input${index}.array.blockSize")
-                }
-            }
+
             addLine(
                 """
                 |val resultStrides = %T(shape = intArrayOf(${resultShape.joinToString()}))
@@ -38,39 +41,64 @@ class ConcatGenerator(
                 resultType.tiledArrayTypeName()
             )
 
+            val loopIndices = IndexStorage()
+
             if (actualAxis != resultShape.lastIndex) {
                 addLine("val resultBlocks = resultArray.blocks")
                 inputInfo.forEachIndexed { index, input ->
-                    val matrixPartSize = input.shape.slice(actualAxis until input.shape.lastIndex)
-                    addLine("val input${index}MatrixPartSize = $matrixPartSize * input${index}BlocksInRow")
+                    val matrixPartSize =
+                        input.shape.slice(actualAxis until input.shape.lastIndex).fold(1, Int::times)
+                    addLine("val input${index}MatrixPartSize = ${matrixPartSize * input.shape.blocksInRow()}")
                 }
                 addLine("var resultBlockIndex = 0")
                 val numIterations = resultShape.slice(0 until actualAxis).fold(1, Int::times)
-                generateLoop("i", 0, numIterations) {
+                generateLoop("i", 0 to numIterations, loopIndices) {
                     inputInfo.indices.forEach { index ->
-                        addLine("val input${index}Offset = i * input${index}MatrixPartSize")
+                        val inputOffset = loopIndices.inlineLiteral("i") * "input${index}MatrixPartSize".toLiteral()
+                        addLine("val input${index}Offset = $inputOffset")
                         generateLoop(
                             "j",
-                            "input${index}Offset",
-                            "input${index}Offset + input${index}MatrixPartSize"
+                            "input${index}Offset" to "input${index}Offset + input${index}MatrixPartSize",
+                            loopIndices
                         ) {
-                            addLine("input${index}Blocks[j].copyInto(resultBlocks[resultBlockIndex++])")
+                            if (isLastUsage(index)) {
+                                addLine("resultBlocks[resultBlockIndex++] = input${index}Blocks[j]")
+                            } else {
+                                addLine("input${index}Blocks[j].copyInto(resultBlocks[resultBlockIndex++])")
+                            }
                         }
                     }
                 }
             } else {
-                addLine("val resultPointer = resultArray.pointer()")
-                generateLoop("i", 0, "resultArray.blocksNum") {
-                    inputInfo.forEachIndexed { index, input ->
-                        generateLoop("j", 0, "input${index}BlocksInRow", toGenerate = !input.shape.hasOneBlockInRow()) {
-                            val blockIndex = if (!input.shape.hasOneBlockInRow()) "i * input${index}BlocksInRow + j" else "i"
-                            addLine("val input${index}Block = input${index}Blocks[${blockIndex}]")
-                            generateLoop("k", 0, "input${index}.array.blockSize") {
-                                add(
-                                    """
-                                    |resultPointer.set(input${index}Block[k])
-                                    |resultPointer.increment()
-                                    |""".trimMargin())
+                if (resultShape.blocksInRow() > 1) {
+                    addLine("val resultPointer = resultArray.pointer()")
+                    generateLoop("i", 0 to resultShape.blocksNum(), loopIndices) {
+                        inputInfo.forEachIndexed { index, input ->
+                            generateLoop("j", 0 to input.shape.blocksInRow(), loopIndices) {
+                                val blockIndex = loopIndices.inlineLiteral("i") * input.shape.blocksInRow()
+                                    .toLiteral() + loopIndices.inlineLiteral("j").toLiteral()
+                                addLine("val input${index}Block = input${index}Blocks[${blockIndex}]")
+                                generateLoop("k", 0 to input.shape.blockSize(), loopIndices) {
+                                    add(
+                                        """
+                                        |resultPointer.set(input${index}Block[${loopIndices.inlineLiteral("k")}])
+                                        |resultPointer.increment()
+                                        |""".trimMargin()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    addLine("val resultBlocks = resultArray.blocks")
+                    generateLoop("i", 0 to resultShape.blocksNum(), loopIndices) {
+                        val blockIndex = loopIndices.inlineLiteral("i")
+                        addLine("val resultBlock = resultBlocks[$blockIndex]")
+                        addLine("var idx = 0")
+                        inputInfo.forEachIndexed { index, input ->
+                            addLine("val input${index}Block = input${index}Blocks[$blockIndex]")
+                            generateLoop("k", 0 to input.shape.blockSize(), loopIndices) {
+                                addLine("resultBlock[idx++] = input${index}Block[${loopIndices.inlineLiteral("k")}]")
                             }
                         }
                     }

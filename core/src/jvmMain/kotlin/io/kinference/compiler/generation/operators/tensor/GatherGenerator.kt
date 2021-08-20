@@ -8,6 +8,13 @@ import io.kinference.ndarray.Strides
 import io.kinference.operators.tensor.Gather
 import kotlin.time.ExperimentalTime
 
+/**
+ * Gather generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Gather)
+ *
+ * KInference class: [Gather]
+ */
 @OptIn(ExperimentalTime::class)
 class GatherGenerator(
     private val operator: Gather,
@@ -46,45 +53,41 @@ class GatherGenerator(
                 resultType.tiledArrayTypeName()
             )
 
-            inputs.forEach { (name, input) ->
-                if (!input.shape.hasOneBlockInRow()) {
-                    addLine("val ${name}BlocksInRow = ${input.shape.last()} / ${name}.array.blockSize")
-                }
-            }
-            generateNestedLoops({ "i$it" }, indicesStrides.shape.map { 0 to it }) {
-                generateLoop("iBlock", 0, "indicesBlocksInRow", toGenerate = !indices.shape.hasOneBlockInRow()) {
+            val loopIndices = IndexStorage()
+
+            generateNestedLoops({ "i$it" }, indicesStrides.shape.map { 0 to it }, loopIndices) {
+                generateLoop("iBlock", 0 to indices.shape.blocksInRow(), loopIndices) {
                     addLine(
                         "val indicesBlock = indicesBlocks[${
                             blockIndex(
                                 indicesStrides,
                                 mainIndices = { "i$it" },
-                                blocksInRow = "indicesBlocksInRow",
-                                offset = "iBlock",
-                                oneBlockInRow = indices.shape.hasOneBlockInRow()
+                                blockOffset = "iBlock",
+                                indexStorage = loopIndices
                             )
                         }]"
                     )
-                    generateLoop("iIdx", 0, "indices.array.blockSize") {
-                        if (!indices.shape.hasOneBlockInRow()) {
-                            addLine("val i${indices.shape.lastIndex} = iBlock * indices.array.blockSize + iIdx")
-                        } else {
-                            addLine("val i${indices.shape.lastIndex} = iIdx")
-                        }
-
-                        addLine("val k = indicesBlock[iIdx].toInt().let { if (it < 0) it + ${data.shape[actualAxis]} else it }")
-
-                        if (actualAxis == data.shape.lastIndex && !data.shape.hasOneBlockInRow()) {
+                    generateLoop("iIdx", 0 to indices.shape.blockSize(), loopIndices) {
+                        val lastIndex = loopIndices.inlineLiteral("iBlock") * indices.shape.blockSize().toLiteral() + loopIndices.inlineLiteral("iIdx")
+                        loopIndices.put("i${indices.shape.lastIndex}", 0 to lastIndex.toString())
+                        addLine("val i${indices.shape.lastIndex} = $lastIndex")
+                        addLine("val k = indicesBlock[${loopIndices.inline("iIdx")}].toInt().let { if (it < 0) it + ${data.shape[actualAxis]} else it }")
+                        if (actualAxis == data.shape.lastIndex && data.shape.blocksInRow() > 1) {
                             add(
                                 """
-                                |val kBlock = k / data.array.blockSize
-                                |val kIdx = k - kBlock * data.array.blockSize
+                                |val kBlock = k / ${data.shape.blockSize()}
+                                |val kIdx = k - kBlock * ${data.shape.blockSize()}
                                 |""".trimIndent()
                             )
                         }
+                        loopIndices.put("k", 0 to data.shape.last())
+                        loopIndices.put("kBlock", 0 to data.shape.blocksInRow())
+                        loopIndices.put("kIdx", 0 to data.shape.blockSize())
 
                         generateNestedLoops(
                             { "j${if (it < actualAxis) it else it + 1}" },
-                            dataStrides.shape.filterIndexed { index, _ -> index != actualAxis }.map { 0 to it }
+                            dataStrides.shape.filterIndexed { index, _ -> index != actualAxis }.map { 0 to it },
+                            loopIndices
                         ) {
                             if (actualAxis == data.shape.lastIndex) {
                                 addLine(
@@ -92,9 +95,8 @@ class GatherGenerator(
                                         blockIndex(
                                             dataStrides,
                                             mainIndices = { "j$it" },
-                                            blocksInRow = "dataBlocksInRow",
-                                            offset = "kBlock",
-                                            oneBlockInRow = data.shape.hasOneBlockInRow()
+                                            blockOffset = "kBlock",
+                                            indexStorage = loopIndices
                                         )
                                     }]"
                                 )
@@ -106,23 +108,21 @@ class GatherGenerator(
                                                 it < actualAxis -> "j$it"
                                                 else -> "i${it - actualAxis}"
                                             } },
-                                            blocksInRow = "indicesBlocksInRow",
-                                            offset = "iBlock",
-                                            oneBlockInRow = indices.shape.hasOneBlockInRow()
+                                            blockOffset = "iBlock",
+                                            indexStorage = loopIndices
                                         )
                                     }]"
                                 )
-                                add("resultBlock[iIdx] = dataBlock[${if (data.shape.hasOneBlockInRow()) "k" else "kIdx"}]")
+                                add("resultBlock[iIdx] = dataBlock[${if (data.shape.blocksInRow() == 1) "k" else "kIdx"}]")
                             } else {
-                                generateLoop("jBlock", 0, "dataBlockInRow", toGenerate = !data.shape.hasOneBlockInRow()) {
+                                generateLoop("jBlock", 0 to data.shape.blocksInRow(), loopIndices) {
                                     addLine(
                                         "val dataBlock = dataBlocks[${
                                             blockIndex(
                                                 dataStrides,
                                                 mainIndices = { if (it != actualAxis) "j$it" else "k" },
-                                                blocksInRow = "dataBlocksInRow",
-                                                offset = "jBlock",
-                                                oneBlockInRow = data.shape.hasOneBlockInRow()
+                                                blockOffset = "jBlock",
+                                                indexStorage = loopIndices
                                             )
                                         }]"
                                     )
@@ -133,16 +133,15 @@ class GatherGenerator(
                                                 mainIndices = { when {
                                                     it < actualAxis -> "j$it"
                                                     it - actualAxis < indices.shape.size -> "i${it - actualAxis}"
-                                                    else -> "j${it - indices.shape.size}"
+                                                    else -> "j${it - indices.shape.size + 1}"
                                                 } },
-                                                blocksInRow = "dataBlocksInRow",
-                                                offset = "jBlock",
-                                                oneBlockInRow = data.shape.hasOneBlockInRow()
+                                                blockOffset = "jBlock",
+                                                indexStorage = loopIndices
                                             )
                                         }]"
                                     )
-                                    generateLoop("jIdx", 0, "data.array.blockSize") {
-                                        addLine("resultBlock[jIdx] = dataBlock[jIdx]")
+                                    generateLoop("jIdx", 0 to data.shape.blockSize(), loopIndices) {
+                                        addLine("resultBlock[${loopIndices.inline("jIdx")}] = dataBlock[${loopIndices.inline("jIdx")}]")
                                     }
                                 }
                             }
