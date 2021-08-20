@@ -3,6 +3,7 @@ package io.kinference.compiler.generation
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import io.kinference.compiler.api.GeneratedONNXModel
+import io.kinference.compiler.api.GeneratedONNXModelProfiler
 import io.kinference.compiler.generation.info.TensorInfo
 import io.kinference.compiler.generation.initializers.InitializerGenerator
 import io.kinference.compiler.generation.models.ClassGenerator
@@ -16,6 +17,8 @@ import io.kinference.compiler.generation.utils.withControlFlow
 import io.kinference.data.tensors.Tensor
 import io.kinference.graph.Context
 import io.kinference.graph.Graph
+import io.kinference.graph.ProfileAnalysisEntry
+import io.kinference.graph.ProfilingContext
 import io.kinference.ndarray.arrays.NDArray
 import io.kinference.operators.Operator
 import io.kinference.protobuf.resolveLocalDataType
@@ -28,7 +31,8 @@ import kotlin.time.ExperimentalTime
 class ModelClassGenerator(
     private val graph: Graph,
     resourceDirectory: File,
-    private val implementationClass: ClassName
+    private val implementationClass: ClassName,
+    private val implementProfiling: Boolean
 ) : ClassGenerator(implementationClass) {
     private val initializersPath = "onnx/initializers/".modelResourcePath()
     private val preparedTensorsPath = "onnx/prepared/".modelResourcePath()
@@ -103,6 +107,13 @@ class ModelClassGenerator(
             addProperty(generateOperatorsProperty())
             addProperty(generateInitializersProperty())
             addProperty(generatePreparedTensorsContextProperty())
+
+            if (implementProfiling) {
+                addSuperinterface(GeneratedONNXModelProfiler::class)
+                addProperty(generateProfilesProperty())
+                addFunction(generateAnalyzeProfilingResultsFunction())
+                addFunction(generateResetProfilesFunction())
+            }
         }
     }
 
@@ -145,9 +156,10 @@ class ModelClassGenerator(
             KModifier.PRIVATE
         ).initializer(operatorsListBuilder.generate()).build()
 
-    private fun generatePredictFunction(): FunSpec {
-        val ioMapType = Map::class.parameterizedBy(String::class, NDArray::class)
-        return FunSpec.builder("predict").apply {
+    private fun generatePredictFunction(): FunSpec =
+        FunSpec.builder("predict").apply {
+            val ioMapType = Map::class.parameterizedBy(String::class, NDArray::class)
+
             addModifiers(KModifier.OVERRIDE)
             addParameter("inputTensors", ioMapType)
             returns(ioMapType)
@@ -160,10 +172,21 @@ class ModelClassGenerator(
             }
             addCode(generateReturn())
         }.build()
-    }
 
     private fun generateInitialization(): CodeBlock =
         CodeBlock.builder().apply {
+            if (implementProfiling) {
+                add(
+                    """
+                    |val profilingContext = %T(%S).apply {
+                    |    profiles.add(this)
+                    |}
+                    |""".trimMargin(),
+                    ProfilingContext::class,
+                    "Generated model ${implementationClass.simpleName}"
+                )
+            }
+
             addLine(
                 "val tensors: Array<%T?> = Array(%L) { null }",
                 NDArray::class,
@@ -191,6 +214,9 @@ class ModelClassGenerator(
         CodeBlock.builder().apply {
             addLine("/* ${operator.info.name} */")
             withControlFlow("run") {
+                if (implementProfiling) {
+                    beginControlFlow("profilingContext.profile(%S)", operator.info.name)
+                }
                 add(OperatorGenerator(operator, info = OperatorGenerationInfo(
                     nameMapping,
                     tensorLastUsageIndexLambda,
@@ -199,6 +225,9 @@ class ModelClassGenerator(
                     preparedContextBuilder,
                     operatorIndex
                 )).generate())
+                if (implementProfiling) {
+                    endControlFlow()
+                }
             }
         }.build()
 
@@ -211,5 +240,29 @@ class ModelClassGenerator(
                 }
             }
             addLine(")")
+        }.build()
+
+    private fun generateProfilesProperty(): PropertySpec =
+        PropertySpec.builder(
+            "profiles",
+            ArrayList::class.asTypeName().parameterizedBy(ProfilingContext::class.asTypeName()),
+            KModifier.PRIVATE
+        ).initializer("ArrayList()").build()
+
+    private fun generateAnalyzeProfilingResultsFunction(): FunSpec =
+        FunSpec.builder("analyzeProfilingResults").apply {
+            addModifiers(KModifier.OVERRIDE)
+            returns(ProfileAnalysisEntry::class)
+            addCode(
+                "return profiles.%M(%S)",
+                MemberName("io.kinference.graph", "analyze"),
+                "Generated model ${implementationClass.simpleName}"
+            )
+        }.build()
+
+    private fun generateResetProfilesFunction(): FunSpec =
+        FunSpec.builder("resetProfiles").apply {
+            addModifiers(KModifier.OVERRIDE)
+            addCode("return profiles.clear()")
         }.build()
 }

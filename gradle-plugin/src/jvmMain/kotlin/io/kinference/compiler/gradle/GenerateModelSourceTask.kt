@@ -22,7 +22,8 @@ open class GenerateModelSourceTask : DefaultTask() {
                 modelFile = it.modelFile,
                 sourceDirectory = it.sourceDirectory,
                 resourceDirectory = it.resourceDirectory,
-                implementationClass = it.implementationClass
+                implementationClass = it.implementationClass,
+                implementProfiling = it.profile
             ).generate()
         }
     }
