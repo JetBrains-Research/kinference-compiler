@@ -9,6 +9,13 @@ import io.kinference.ndarray.toIntArray
 import io.kinference.operators.tensor.Reshape
 import kotlin.time.ExperimentalTime
 
+/**
+ * Reshape generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Reshape)
+ *
+ * KInference class: [Reshape]
+ */
 @OptIn(ExperimentalTime::class)
 class ReshapeGenerator(
     private val operator: Reshape,

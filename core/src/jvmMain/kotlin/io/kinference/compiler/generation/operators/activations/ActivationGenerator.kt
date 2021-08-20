@@ -6,6 +6,7 @@ import io.kinference.compiler.generation.operators.common.TypeAndShapeAwareOpera
 import io.kinference.operators.activations.Activation
 import kotlin.time.ExperimentalTime
 
+/* Base class for activation operator generators. */
 @OptIn(ExperimentalTime::class)
 abstract class ActivationGenerator(
     private val operator: Activation,

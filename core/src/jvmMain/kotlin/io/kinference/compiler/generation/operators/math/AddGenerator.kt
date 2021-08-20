@@ -7,6 +7,13 @@ import io.kinference.compiler.generation.utils.dataTypeName
 import io.kinference.operators.math.Add
 import kotlin.time.ExperimentalTime
 
+/**
+ * Add generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Add)
+ *
+ * KInference class: [Add]
+ */
 @OptIn(ExperimentalTime::class)
 class AddGenerator(
     operator: Add,

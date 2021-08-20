@@ -8,6 +8,13 @@ import io.kinference.ndarray.Strides
 import io.kinference.operators.tensor.Gather
 import kotlin.time.ExperimentalTime
 
+/**
+ * Gather generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Gather)
+ *
+ * KInference class: [Gather]
+ */
 @OptIn(ExperimentalTime::class)
 class GatherGenerator(
     private val operator: Gather,

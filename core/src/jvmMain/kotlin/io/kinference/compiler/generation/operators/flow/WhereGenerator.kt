@@ -7,6 +7,13 @@ import io.kinference.compiler.generation.utils.DataTypeInfo
 import io.kinference.operators.flow.Where
 import kotlin.time.ExperimentalTime
 
+/**
+ * Where generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Where)
+ *
+ * KInference class: [Where]
+ */
 @OptIn(ExperimentalTime::class)
 class WhereGenerator(
     operator: Where,

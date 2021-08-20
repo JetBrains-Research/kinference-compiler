@@ -6,6 +6,13 @@ import io.kinference.compiler.generation.utils.DataTypeInfo
 import io.kinference.operators.logical.Equal
 import kotlin.time.ExperimentalTime
 
+/**
+ * Equal generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Equal)
+ *
+ * KInference class: [Equal]
+ */
 @OptIn(ExperimentalTime::class)
 class EqualGenerator(
     operator: Equal,

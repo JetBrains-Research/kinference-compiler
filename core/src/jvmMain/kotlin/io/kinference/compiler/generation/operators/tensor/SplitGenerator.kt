@@ -9,6 +9,13 @@ import io.kinference.operators.tensor.Split
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
 
+/**
+ * Split generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Split)
+ *
+ * KInference class: [Split]
+ */
 @OptIn(ExperimentalTime::class)
 class SplitGenerator(
     private val operator: Split,

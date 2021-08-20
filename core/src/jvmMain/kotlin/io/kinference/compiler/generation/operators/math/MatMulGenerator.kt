@@ -11,6 +11,13 @@ import io.kinference.ndarray.broadcasting.unsqueezeFirst
 import io.kinference.operators.math.MatMul
 import kotlin.time.ExperimentalTime
 
+/**
+ * MatMul generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#MatMul)
+ *
+ * KInference class: [MatMul]
+ */
 @OptIn(ExperimentalTime::class)
 class MatMulGenerator(
     private val operator: MatMul,
@@ -82,7 +89,7 @@ class MatMulGenerator(
     override fun resultInfo(): Map<String, TensorInfo> {
         val actualInputShapes = inputInfo.map { it.shape }
         if (actualInputShapes.any { it.size < 2 }) {
-            TODO()
+            TODO("Broadcasting 1D matrices for MatMul is not supported yet")
         }
         val resultShape = Broadcasting.broadcastShapeForMatmul(actualInputShapes[0], actualInputShapes[1])
 

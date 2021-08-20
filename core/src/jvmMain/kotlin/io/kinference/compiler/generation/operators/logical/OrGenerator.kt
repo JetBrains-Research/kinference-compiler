@@ -6,6 +6,13 @@ import io.kinference.compiler.generation.utils.DataTypeInfo
 import io.kinference.operators.logical.Or
 import kotlin.time.ExperimentalTime
 
+/**
+ * Or generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Or)
+ *
+ * KInference class: [Or]
+ */
 @OptIn(ExperimentalTime::class)
 class OrGenerator(
     operator: Or,

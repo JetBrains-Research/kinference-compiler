@@ -8,6 +8,13 @@ import io.kinference.ndarray.toIntArray
 import io.kinference.operators.tensor.Unsqueeze
 import kotlin.time.ExperimentalTime
 
+/**
+ * Unsqueeze generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Unsqueeze)
+ *
+ * KInference class: [Unsqueeze]
+ */
 @OptIn(ExperimentalTime::class)
 class UnsqueezeGenerator(
     private val operator: Unsqueeze,

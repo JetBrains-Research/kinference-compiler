@@ -10,6 +10,13 @@ import io.kinference.ndarray.toIntArray
 import io.kinference.operators.tensor.Transpose
 import kotlin.time.ExperimentalTime
 
+/**
+ * Transpose generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Transpose)
+ *
+ * KInference class: [Transpose]
+ */
 @OptIn(ExperimentalTime::class)
 class TransposeGenerator(
     private val operator: Transpose,

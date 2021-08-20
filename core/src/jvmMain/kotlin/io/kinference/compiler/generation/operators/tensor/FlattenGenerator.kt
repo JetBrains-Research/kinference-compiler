@@ -7,6 +7,13 @@ import io.kinference.compiler.generation.utils.actualAxis
 import io.kinference.operators.tensor.Flatten
 import kotlin.time.ExperimentalTime
 
+/**
+ * Flatten generator.
+ *
+ * [ONNX documentation](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Flatten)
+ *
+ * KInference class: [Flatten]
+ */
 @OptIn(ExperimentalTime::class)
 class FlattenGenerator(
     private val operator: Flatten,
