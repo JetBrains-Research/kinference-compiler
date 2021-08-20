@@ -9,7 +9,6 @@ import io.kinference.compiler.generation.models.MapInitBuilder
 import io.kinference.compiler.generation.operators.BaseOperatorGenerator
 import io.kinference.compiler.generation.operators.OperatorGenerationInfo
 import io.kinference.compiler.generation.utils.addLine
-import io.kinference.graph.Context
 import io.kinference.operators.Operator
 import io.kinference.protobuf.message.AttributeProto
 import kotlin.time.ExperimentalTime
@@ -64,7 +63,7 @@ class DefaultOperatorGenerator(
             }
 
             // Apply operator
-            addLine("val result = operator.apply(%T(), inputs)", Context::class)
+            addLine("val result = operator.apply(preparedTensorsContext, inputs)")
             addLine("val resultMap = operator.outputs.zip(result.map { it?.data }).toMap()")
 
             // Extract outputs

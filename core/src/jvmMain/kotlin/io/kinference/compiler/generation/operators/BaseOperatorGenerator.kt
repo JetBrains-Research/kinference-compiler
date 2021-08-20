@@ -2,6 +2,7 @@ package io.kinference.compiler.generation.operators
 
 import io.kinference.compiler.generation.info.TensorInfo
 import io.kinference.compiler.generation.models.CodeBlockGenerator
+import io.kinference.compiler.generation.context.ContextBuilder
 import io.kinference.compiler.generation.models.ListInitBuilder
 import io.kinference.operators.Operator
 import kotlin.time.ExperimentalTime
@@ -17,15 +18,8 @@ abstract class BaseOperatorGenerator(
     protected val nameMapping: (String) -> String = info.nameMapping
     protected val tensorInfo: MutableMap<String, TensorInfo> = info.tensorInfo
     protected val operatorsListBuilder: ListInitBuilder = info.operatorsListBuilder
+    protected val preparedContextBuilder: ContextBuilder = info.preparedContextBuilder
 
     protected fun isLastUsage(inputIndex: Int): Boolean =
         info.tensorLastUsageIndex(operator.inputs[inputIndex]) == info.operatorIndex
 }
-
-data class OperatorGenerationInfo(
-    val nameMapping: (String) -> String,
-    val tensorLastUsageIndex: (String) -> Int,
-    val tensorInfo: MutableMap<String, TensorInfo>,
-    val operatorsListBuilder: ListInitBuilder,
-    val operatorIndex: Int
-)
