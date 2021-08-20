@@ -131,7 +131,7 @@ class TransposeGenerator(
 
             val output = operator.outputs.first()
             addLine(
-                "%L = %T(array = %T(blocks = resultBlocks), strides = %T(shape = intArrayOf(${resultShape.joinToString()}))) // %L",
+                "%L = %T(array = %T(blocks = resultBlocks), strides = %T(shape = intArrayOf(${resultShape.joinToString()}))) /* %L */",
                 nameMapping(output),
                 resultType.ndArrayTypeName(),
                 resultType.tiledArrayTypeName(),
