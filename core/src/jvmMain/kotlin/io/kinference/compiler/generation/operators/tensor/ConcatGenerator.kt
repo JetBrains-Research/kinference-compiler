@@ -106,7 +106,7 @@ class ConcatGenerator(
             }
             val output = operator.outputs.first()
             addLine(
-                "%L = %T(array = resultArray, strides = resultStrides) // %L",
+                "%L = %T(array = resultArray, strides = resultStrides) /* %L */",
                 nameMapping(output),
                 resultType.ndArrayTypeName(),
                 output

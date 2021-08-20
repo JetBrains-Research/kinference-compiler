@@ -189,7 +189,7 @@ class ModelClassGenerator(
 
     private fun generateOperatorScope(operator: Operator<*, *>, operatorIndex: Int): CodeBlock =
         CodeBlock.builder().apply {
-            addLine("// ${operator.info.name}")
+            addLine("/* ${operator.info.name} */")
             withControlFlow("run") {
                 add(OperatorGenerator(operator, info = OperatorGenerationInfo(
                     nameMapping,

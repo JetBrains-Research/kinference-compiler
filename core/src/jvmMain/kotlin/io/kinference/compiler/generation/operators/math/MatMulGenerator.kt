@@ -79,7 +79,7 @@ class MatMulGenerator(
             }
             val output = operator.outputs.first()
             addLine(
-                "%L = result // %L",
+                "%L = result /* %L */",
                 nameMapping(output),
                 output
             )

@@ -34,7 +34,7 @@ abstract class TypeAndShapeAwareOperatorGenerator(
         builder.apply {
             if (inputsToInfer.all { tensorInfo.containsKey(it) }) {
                 operator.inputs.forEachIndexed { index, input ->
-                    addLine("val input$index = %L // %L", nameMapping(input), input)
+                    addLine("val input$index = %L /* %L */", nameMapping(input), input)
                 }
 
                 resultInfo().forEach { (name, info) ->
