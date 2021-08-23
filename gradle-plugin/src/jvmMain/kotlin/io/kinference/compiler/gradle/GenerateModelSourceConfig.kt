@@ -11,6 +11,7 @@ class GenerateModelSourceConfig {
     var modelFile: File = NOT_SET
     var outputDirectory: File = NOT_SET
     var implementationClass: String = ""
+    var profile: Boolean = false
 
     internal var sourceDirectory: File = NOT_SET
     internal var resourceDirectory: File = NOT_SET

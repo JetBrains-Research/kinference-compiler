@@ -11,7 +11,8 @@ class ModelSourceGenerator(
     private val modelFile: File,
     private val sourceDirectory: File,
     private val resourceDirectory: File,
-    private val implementationClass: String
+    private val implementationClass: String,
+    private val implementProfiling: Boolean
 ) {
     fun generate() {
         sourceDirectory.mkdirs()
@@ -28,7 +29,12 @@ class ModelSourceGenerator(
             implementationClass.replaceAfterLast(".", "").dropLast(1),
             implementationClass.substringAfterLast(".")
         )
-        val modelClass = ModelClassGenerator(model.graph, resourceDirectory, implementationClassName).generate()
+        val modelClass = ModelClassGenerator(
+            model.graph,
+            resourceDirectory,
+            implementationClassName,
+            implementProfiling
+        ).generate()
 
         implementationClassFile.writeText(
             FileSpec.builder(implementationClassName.packageName, implementationClassName.simpleName)
